@@ -1,0 +1,18 @@
+#! /bin/env -S sh
+
+BUILD_FOLDER=build
+
+# 0. Create build folder and ignore in versioning
+mkdir -p $BUILD_FOLDER
+echo '*' > $BUILD_FOLDER/.gitignore
+
+# 1. Clean
+(cd $BUILD_FOLDER && rm -f blink.o blink.elf blink.hex)
+
+# 2. Compile
+avr-gcc -mmcu=atmega64a -Os -DF_CPU=8000000UL -c blink.c -o ./$BUILD_FOLDER/blink.o
+avr-gcc -mmcu=atmega64a ./$BUILD_FOLDER/blink.o -o ./$BUILD_FOLDER/blink.elf
+avr-objcopy -O ihex -R .eeprom ./$BUILD_FOLDER/blink.elf ./$BUILD_FOLDER/blink.hex
+
+# 3. Flash (slow ISP because we are at 1 MHz)
+avrdude -c usbasp -p m64 -B 16 -U flash:w:./$BUILD_FOLDER/blink.hex:i

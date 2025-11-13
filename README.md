@@ -8,9 +8,9 @@ This is a sample program to learn how to use I/O, timers and interrupts on AVR m
 
 On a debian based system
 
-´´´sh
+```sh
 sudo apt install gcc-avr binutils-avr avr-libc avrdude -y
-´´´
+```
 
 Add `/usr/lib/avr/include/` to the include path in your editor
 

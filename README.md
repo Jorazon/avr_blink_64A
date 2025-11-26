@@ -6,13 +6,15 @@ This is a sample program to learn how to use I/O, timers and interrupts on AVR m
 
 ## Requirements
 
-On a debian based system
+On a debian based system install the requirements
 
 ```sh
 sudo apt install gcc-avr binutils-avr avr-libc avrdude -y
 ```
 
-Add `/usr/lib/avr/include/` to the include path in your editor
+or build them yourself using these [instructions](avr-gcc.md).
+
+Add your `avr/include/` location to the include path in your editor.
 
 ## Building
 
@@ -27,7 +29,7 @@ avr-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature ./$BUILD_FOLDER/b
 avrdude -c usbasp -p m64 -B 16 -U flash:w:blink.hex:i
 ```
 
-The `compile` script is provided to do everything.
+`makefile` is provided for building, setting fuses and uploading.
 
 ## Circuit
 ```

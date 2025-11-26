@@ -100,10 +100,11 @@ fuses:
 		-U lfuse:w:0x9e:m -U hfuse:w:0xc1:m -U efuse:w:0xff:m
 
 # Upload
-upload-%: $(HEX_DIR)/%.hex
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(MCU) -B $(BITCLOCK) -U flash:w:$<:i
+FORCE: # empty rule is always newer than anything
+upload-%: $(HEX_DIR)/%.hex FORCE
+	$(AVRDUDE) -c $(PROGRAMMER) -p $(MCU) -B $(BITCLOCK) -U flash:w:$(HEX_DIR)/$*.hex:i
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean fuses $(addprefix upload-,$(TARGETS))
+.PHONY: all clean fuses

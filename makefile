@@ -2,37 +2,42 @@
 # Change these for your specific microcontroller  #
 
 # MCU name
-MCU   = atmega64a
+MCU      ?= atmega64a
 # MCU frequency (16 MHz)
-F_CPU = 16000000UL
+F_CPU    ?= 16000000UL
 # bit clock period (µs, float)
-BITCLOCK = 11.0
+BITCLOCK ?= 11.0
 
-# ============= Programmer Selection ============ #
-# Programmer settings (uncomment the one you use) #
+# ============= Programmer Settings ============= #
 
-#PROGRAMMER = usbasp
-PROGRAMMER ?= usbasp-clone
+PROGRAMMER       ?= usbasp-clone
+PROGRAMMER_ARGS   = -B $(BITCLOCK)
 
 # =================== Targets =================== #
+# Target will be built as <target>.hex and it's   #
+# entry point is in <target>/<target>.c           #
 
 TARGETS := \
 blink \
 serial
 
-# =============================================== #
-# No need to edit below this line for normal use  #
+# =================== Folders =================== #
 
 COMMON_DIR = common
-BUILD_DIR = build
-HEX_DIR = programs
+BUILD_DIR  = build
+HEX_DIR    = programs
 
-CC        = avr-gcc
-OBJCOPY   = avr-objcopy
-AVRDUDE   = avrdude
+# ============= Programs & Arguments ============ #
 
-CFLAGS  = -mmcu=$(MCU) -Os -DF_CPU=$(F_CPU) -Wall -Wextra -pedantic -MMD
-LDFLAGS = -mmcu=$(MCU) -Wl,--gc-sections
+CC         = avr-gcc
+OBJCOPY    = avr-objcopy
+AVRDUDE    = avrdude
+
+CFLAGS     = -mmcu=$(MCU) -Os -DF_CPU=$(F_CPU) -Wall -Wextra -pedantic -MMD
+LDFLAGS    = -mmcu=$(MCU) -Wl,--gc-sections
+
+# =============================================== #
+# No need to edit below this line for normal use  #
 
 # Shared source files (compiled once)
 COMMON_SRC := $(wildcard $(COMMON_DIR)/*.c)
@@ -61,8 +66,9 @@ all: $(HEXFILES)
 	@echo "Available programs: $(TARGETS)"
 	@echo "Usage:"
 	@echo "  make upload-<name>  Upload program to MCU"
-	@echo "  make clean          Remove build/ folder"
 	@echo "  make fuses          Program ATmega64A fuses"
+	@echo "  make clean          Remove $(BUILD_DIR)/ folder"
+	@echo "  make clean-all      Remove $(BUILD_DIR)/ and $(HEX_DIR)/ folders"
 	@echo ""
 
 # Dirs
@@ -94,17 +100,32 @@ $(HEX_DIR)/%.hex: $(BUILD_DIR)/%.elf | $(HEX_DIR) $(BUILD_DIR)
 # Dependency tracking
 -include $(COMMON_DEP) $(ALL_PROG_DEP)
 
+# avrdude stuff
+AVRDUDE_COMMAND = $(AVRDUDE) -c $(PROGRAMMER) $(PROGRAMMER_ARGS) -p $(MCU)
+
 # Fuse settings for ATmega64A with external 16MHz crystal + SPIEN enabled
 fuses:
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(MCU) -B $(BITCLOCK) \
-		-U lfuse:w:0x9e:m -U hfuse:w:0xc1:m -U efuse:w:0xff:m
+	$(AVRDUDE_COMMAND) -U lfuse:w:0x9e:m -U hfuse:w:0xc1:m -U efuse:w:0xff:m
 
 # Upload
 FORCE: # empty rule is always newer than anything
-upload-%: $(HEX_DIR)/%.hex FORCE
-	$(AVRDUDE) -c $(PROGRAMMER) -p $(MCU) -B $(BITCLOCK) -U flash:w:$(HEX_DIR)/$*.hex:i
 
+define UPLOAD_RULE
+upload-$(1): $(HEX_DIR)/$(1).hex FORCE
+	@echo "=== Flashing $(1) ==="
+	$(AVRDUDE_COMMAND) -U flash:w:$$<:i
+	@echo "=== $(1) done ===="
+endef
+
+$(foreach prog,$(TARGETS),$(eval $(call UPLOAD_RULE,$(prog))))
+.PHONY: $(addprefix upload-,$(TARGETS))
+
+# remove intermediate build files
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean fuses
+# remove all built files
+clean-all:
+	rm -rf $(BUILD_DIR) $(HEX_DIR)
+
+.PHONY: all fuses clean clean-all

@@ -5,24 +5,36 @@
 extern "C" {
 #endif
 
-/* avr-gcc: int is 16-bit, long is 32-bit */
-#define INT_MAX   32767            /* +2^15 - 1 */
-#define INT_MIN   (-32768)         /* -2^15     */
+/* char is 8 bit and signed by default unless you use -funsigned-char */
 
-#define UINT_MAX  65535U           /* 2^16 - 1 */
+#define CHAR_BIT       8
+#define UCHAR_MAX      ((unsigned char)~0U)
+#define CHAR_IS_SIGNED (((char)-1) < 0)
 
-/* long is 32-bit on AVR */
-#define LONG_MAX  2147483647L
-#define LONG_MIN  (-2147483648L)
+#if CHAR_IS_SIGNED
+    #define CHAR_MAX   ((signed char)(UCHAR_MAX >> 1))
+    #define CHAR_MIN   ((signed char)(~CHAR_MAX))
+#else
+    #define CHAR_MAX   UCHAR_MAX
+#endif
+
+/* int is 16-bit */
+
+#define UINT_MAX   (~0U)
+#define INT_MAX    (UINT_MAX >> 1)
+#define INT_MIN    (~INT_MAX)
+
+/* long is 32-bit */
+
+#define ULONG_MAX  (~0UL)
+#define LONG_MAX   (ULONG_MAX >> 1)
+#define LONG_MIN   (~LONG_MAX)
 
 /* long long is 64-bit */
-#define LLONG_MAX  9223372036854775807LL
-#define LLONG_MIN  (-9223372036854775806854775808LL)
 
-/* char is signed by default on avr-gcc unless you use -funsigned-char */
-#define CHAR_BIT  8
-#define CHAR_MAX  127
-#define CHAR_MIN  (-128)
+#define ULLONG_MAX (~0ULL)
+#define LLONG_MAX  (ULLONG_MAX >> 1)
+#define LLONG_MIN  (~LLONG_MAX)
 
 #ifdef __cplusplus
 } /* extern "C" */
